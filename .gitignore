@@ -1,0 +1,13 @@
+# Android / Gradle build outputs
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+.DS_Store
+
+# Keep release APK in apk/ folder for contest submission
+!apk/
+!apk/*.apk
+
