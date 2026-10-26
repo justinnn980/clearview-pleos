@@ -71,6 +71,10 @@ ls -lh app/build/outputs/apk/release/app-release.apk
 
 ## 5. 핵심 화면 및 동작 원리
 
+### 실제 빌드 APK 실행 화면 (Android Emulator 구동 캡처)
+![ClearView Running APK Screenshot](./docs/emulator_running_screenshot.png)
+
+### Pleos Connect 상단 비간섭 알림 및 원인별 해결 원리
 ![Pleos Connect Minimalist Toast UI](./docs/option_B_pleos_light_toast.png)
 
 ![Inside vs Outside Fogging Resolution](./docs/option_E_inside_vs_outside_visual.png)
