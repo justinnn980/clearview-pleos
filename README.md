@@ -2,7 +2,7 @@
 
 ## 1. 앱 이름 및 한 줄 소개
 - **앱 이름**: **클리어뷰 (ClearView)**
-- **한 줄 소개**: 유리 **안쪽·바깥쪽 김서림 원인**을 스스로 구분해 공조·와이퍼를 정밀 제어하고, **카메라 사이드미러(DSM) 렌즈 열선 및 위치 안내**까지 챙겨 주는 Pleos Connect 원터치·자동 시야 케어 앱입니다.
+- **한 줄 소개**: 유리 **안쪽·바깥쪽 김서림 원인**을 스스로 구분해 공조·와이퍼·열선을 정밀 제어하고, 한 화면의 **차량 측면 홀로그래픽 HUD(상태 · 알림 · 적용)**로 앞유리·사이드미러·뒷유리 시야를 원터치 복구해 주는 Pleos Connect 시야 케어 앱입니다.
 
 ---
 
@@ -45,19 +45,17 @@ ls -lh app/build/outputs/apk/release/app-release.apk
 | **Compile / Target SDK** | Android API 34 (`compileSdk = 34`, `minSdk = 28`) |
 | **Vehicle SDK** | `ai.pleos.playground:Vehicle:2.3.2` |
 | **JDK / Gradle** | JDK 17+ (OpenJDK 21 검증 완료), Gradle 8.9 (`./gradlew` 포함) |
-| **권장 해상도** | Pleos Connect 가로형 IVI 디스플레이 및 일반 Android 에뮬레이터 모두 호환 |
+| **권장 해상도** | Pleos Connect 가로형 IVI 디스플레이 (풀블리드 60fps 홀로그래픽 HUD) |
 
 ### 필요한 설정 및 심사자 검증 가이드
-별도의 외부 API 키나 하드웨어 장비 없이도 **에뮬레이터 및 심사 환경에서 즉시 모든 시나리오를 검증**할 수 있도록 대화형 시뮬레이션 및 하드웨어 폴백 스위치를 내장했습니다.
+별도의 외부 API 키나 하드웨어 장비 없이도 **에뮬레이터 및 심사 환경에서 즉시 모든 시나리오를 검증**할 수 있도록 설계되었습니다.
 
-1. **`[앞이 안 보여요 — 원터치 시야 즉시 복구]` 버튼**
-   - 초보 운전자가 당황했을 때 버튼 하나로 현재 실내·외 이슬점($T_{dew}$)을 분석하여 최적의 제습·열선·와이퍼 제어를 즉시 수행합니다.
-2. **상황별 시나리오 검증 카드 (① ~ ③ 탭하여 즉시 테스트)**
-   - **시나리오 ① 유리 안쪽 김서림 (겨울·우천)**: `HVAC.setHvacDefroster(FRONT_WINDSHIELD, true)` + `setHvacAc(true)` + `setHvacRecirculation(false)` + `SideMirror.setHvacSideMirrorHeat(1)` 동시 가동
-   - **시나리오 ② 유리 바깥쪽 결로 (여름 열대야 에어컨 역효과)**: 유리 방향 찬 바람 송풍 차단(`FanDirectionType.FACE`) + 설정 온도 `+2℃` 상향 + 와이퍼 1회 작동(`WiperSwitch.MIST`)
-   - **시나리오 ③ 카메라 사이드미러(DSM) 렌즈 김서림**: 미러 하우징 열선 가동 + 정차(`P`단) 시 **카메라 렌즈 실제 물리적 위치 가이드** 표시
-3. **하드웨어 미지원 차량(기본형 트림) 폴백 검증**
-   - 화면 중간의 **`[트림 전환: 풀옵션 ↔ 기본형(미지원 폴백)]`** 버튼을 누르면 `checkHvacDefrosterCapabilities` / `checkHvacSideMirrorHeatCapabilities` / `checkWiperSwitchCapabilities` 결과에 따라 미지원 하드웨어(오토 와이퍼, 미러 열선 등) 감지 시 **1단계 음성(TTS)·화면 조작 코칭**으로 자동 전환되는 모습을 확인할 수 있습니다.
+1. **한 화면 3요소 직관적 구성 (상태 · 알림 · 적용)**
+   - **① 상태 (Status)**: 탭 전환이나 스크롤 없이 차량 측면 실루엣 위 4개 구역(**앞유리 바깥쪽 · 앞유리 안쪽 · 사이드미러 · 뒷유리**)을 타겟 레티클(`◎`)과 홀로그램 지시선으로 한눈에 표시합니다.
+   - **② 알림 (Notification)**: 하단 스모크 글래스 콘솔 바에 현재 감지된 김서림·물기 상태와 제어 내역을 1줄로 직관적으로 안내합니다.
+   - **③ 적용 (Apply)**: 우측 하단 **`[시야 복구 적용]`** 버튼 터치 한 번으로 전면 제습(`HVAC.setHvacDefroster`) + 와이퍼 1회(`Wiper.setWiperSwitch`) + 사이드미러·뒷유리 열선(`SideMirror.setHvacSideMirrorHeat`)을 동시에 작동시킵니다.
+2. **인터랙티브 구역 점검**
+   - 각 유리 구역 카드 또는 우측 하단 **`[시야 복구 적용]`** 버튼을 터치하면 **감지 상태(앰버/시안 경고 HUD)**와 **작동 중 상태(네온 시안 액티브 HUD + 음성 안내)** 전환을 즉시 확인할 수 있습니다.
 
 ---
 
@@ -69,13 +67,10 @@ ls -lh app/build/outputs/apk/release/app-release.apk
 
 ---
 
-## 5. 핵심 화면 및 동작 원리
+## 5. 핵심 화면 (Futuristic Holographic HUD)
 
-### 실제 빌드 APK 실행 화면 (Android Emulator 구동 캡처)
-![ClearView Running APK Screenshot](./docs/emulator_running_screenshot.png)
+### [참고화면 1] 차량 부위별(앞유리 안·밖 / 사이드미러 / 뒷유리) 김서림·물기 동시 감지 상태
+![ClearView Warning HUD Screenshot](./docs/emulator_running_screenshot.png)
 
-### Pleos Connect 상단 비간섭 알림 및 원인별 해결 원리
-![Pleos Connect Minimalist Toast UI](./docs/option_B_pleos_light_toast.png)
-
-![Inside vs Outside Fogging Resolution](./docs/option_E_inside_vs_outside_visual.png)
-
+### [참고화면 2] `[시야 복구 적용]` 원터치 작동 완료 상태 (전면 제습 · 와이퍼 1회 · 미러/뒷유리 열선 동시 가동)
+![ClearView Active Recovery HUD Screenshot](./docs/emulator_active_screenshot.png)
