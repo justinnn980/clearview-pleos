@@ -48,8 +48,11 @@ class ClearViewController(
     private val sideMirrors = MirrorArea(MirrorValue.DRIVER_LEFT, MirrorValue.DRIVER_RIGHT)
 
     init {
-        initTts(context.applicationContext)
-        initVehicleSdk(context.applicationContext)
+        val appCtx = context.applicationContext
+        initTts(appCtx)
+        Thread {
+            initVehicleSdk(appCtx)
+        }.start()
     }
 
     private fun initTts(appContext: Context) {
