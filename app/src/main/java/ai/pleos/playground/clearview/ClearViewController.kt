@@ -352,7 +352,7 @@ class ClearViewController(
         val activeNames = mutableListOf<String>()
         if (frontInside) activeNames.add("앞유리 제습")
         if (frontOutside) activeNames.add("앞유리 와이퍼")
-        if (dsmMirror) activeNames.add("카메라 미러 열선")
+        if (dsmMirror) activeNames.add("사이드미러 열선")
         if (rearGlass) activeNames.add("뒷유리 열선")
 
         val summary = if (activeNames.isEmpty()) {

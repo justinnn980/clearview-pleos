@@ -1,8 +1,8 @@
 <resources>
-    <style name="Theme.ClearView" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:statusBarColor">#F8FAFC</item>
-        <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowBackground">@color/bg_light</item>
+    <style name="Theme.ClearView" parent="android:Theme.Material.NoActionBar">
+        <item name="android:statusBarColor">#040811</item>
+        <item name="android:navigationBarColor">#040811</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowBackground">#040811</item>
     </style>
 </resources>
-
