@@ -10,7 +10,6 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 
@@ -24,19 +23,7 @@ class MainActivity : Activity() {
     private lateinit var notificationSubtitle: TextView
     private lateinit var applyButton: Button
 
-    private val modeButtons = mutableListOf<TextView>()
-
-    private var selectedFogType: FogType = FogType.INSIDE_FOG
     private var isApplied: Boolean = false
-
-    private val defaultSnapshot = EnvironmentSnapshot(
-        indoorTempC = 22.0f,
-        indoorHumidityPct = 80.0f,
-        outdoorTempC = 3.0f,
-        outdoorHumidityPct = 65.0f,
-        glassSurfaceTempC = 7.0f,
-        isParked = true
-    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -47,79 +34,36 @@ class MainActivity : Activity() {
             onCapabilitiesUpdated = { }
         )
 
-        setContentView(buildThreeElementUi())
-        selectScenario(FogType.INSIDE_FOG, autoApply = false)
+        setContentView(buildSingleScreenUi())
+        refreshNotificationFromCanvas()
     }
 
     /**
-     * Strictly 3 user-facing elements on a single non-scrolling screen:
-     * 1. 상태 (Intuitive Visual Status Canvas)
-     * 2. 알림 (1-Line Notification)
-     * 3. 적용 (1-Touch Apply Button)
+     * Tab-free, single-screen UI with strictly 3 elements:
+     * 1. 상태 (All-in-One Front / Side Camera Mirror / Rear Visual Canvas)
+     * 2. 알림 (1-Line Status Notification)
+     * 3. 적용 (1-Touch Apply Action Button)
      */
-    private fun buildThreeElementUi(): View {
+    private fun buildSingleScreenUi(): View {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(Color.parseColor("#F8FAFC"))
             setPadding(dp(20), dp(14), dp(20), dp(16))
         }
 
-        // 1. 상태 (Visual Status Screen — ~75% height)
-        val statusFrame = FrameLayout(this).apply {
+        // 1. 상태 (All-Around Vehicle Visual Status Canvas — no tabs)
+        statusCanvas = StatusCanvasView(this) {
+            isApplied = false
+            statusCanvas.setApplying(false)
+            refreshNotificationFromCanvas()
+        }.apply {
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 0,
                 1f
             )
         }
-
-        statusCanvas = StatusCanvasView(this).apply {
-            layoutParams = FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT
-            )
-        }
-        statusFrame.addView(statusCanvas)
-
-        // Subtle top-right state switcher pills overlaid on the corner of the Status Canvas
-        val pillBar = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            background = roundedRect(Color.argb(190, 15, 23, 42), dp(16), Color.parseColor("#334155"), dp(1))
-            setPadding(dp(4), dp(4), dp(4), dp(4))
-            layoutParams = FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                Gravity.TOP or Gravity.END
-            ).apply {
-                topMargin = dp(12)
-                rightMargin = dp(14)
-            }
-        }
-
-        val modes = listOf(
-            "안쪽 김서림" to FogType.INSIDE_FOG,
-            "바깥쪽 물기" to FogType.OUTSIDE_CONDENSATION,
-            "카메라 미러" to FogType.DSM_CAMERA_FOG
-        )
-
-        modes.forEachIndexed { index, (label, fogType) ->
-            val pill = TextView(this).apply {
-                text = label
-                setTextSize(TypedValue.COMPLEX_UNIT_SP, 11f)
-                setTypeface(typeface, Typeface.BOLD)
-                setPadding(dp(12), dp(6), dp(12), dp(6))
-                isClickable = true
-                isFocusable = true
-                setOnClickListener {
-                    selectScenario(fogType, autoApply = false)
-                }
-            }
-            modeButtons.add(pill)
-            pillBar.addView(pill)
-        }
-
-        statusFrame.addView(pillBar)
-        root.addView(statusFrame)
+        root.addView(statusCanvas)
 
         // Bottom Bar combining: 2. 알림 (Notification) + 3. 적용 (Apply Action)
         val bottomBar = LinearLayout(this).apply {
@@ -142,7 +86,7 @@ class MainActivity : Activity() {
             background = roundedRect(Color.parseColor("#2563EB"), dp(6))
         }
 
-        // 2. 알림 (Notification Text Column)
+        // 2. 알림 (1-Line Notification)
         val notificationCol = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
@@ -187,94 +131,83 @@ class MainActivity : Activity() {
         return root
     }
 
-    private fun selectScenario(fogType: FogType, autoApply: Boolean) {
-        selectedFogType = fogType
-        isApplied = autoApply
+    private fun refreshNotificationFromCanvas() {
+        val zones = mutableListOf<String>()
+        val actions = mutableListOf<String>()
 
-        val activeIndex = when (fogType) {
-            FogType.INSIDE_FOG -> 0
-            FogType.OUTSIDE_CONDENSATION -> 1
-            FogType.DSM_CAMERA_FOG -> 2
+        if (statusCanvas.frontInsideFog) {
+            zones.add("앞유리(안쪽)")
+            actions.add("전면 제습(FRONT)")
+        }
+        if (statusCanvas.frontOutsideWater) {
+            zones.add("앞유리(바깥쪽)")
+            actions.add("와이퍼 1회(MIST)")
+        }
+        if (statusCanvas.dsmMirrorFog) {
+            zones.add("좌·우 카메라 미러")
+            actions.add("미러 렌즈 열선")
+        }
+        if (statusCanvas.rearGlassFog) {
+            zones.add("뒷유리")
+            actions.add("뒷유리 열선(REAR)")
         }
 
-        modeButtons.forEachIndexed { idx, tv ->
-            if (idx == activeIndex) {
-                tv.setTextColor(Color.WHITE)
-                tv.background = roundedRect(Color.parseColor("#2563EB"), dp(12))
-            } else {
-                tv.setTextColor(Color.parseColor("#94A3B8"))
-                tv.background = null
-            }
-        }
-
-        val visualState = when (fogType) {
-            FogType.INSIDE_FOG -> StatusCanvasView.VisualState.INSIDE_FOG
-            FogType.OUTSIDE_CONDENSATION -> StatusCanvasView.VisualState.OUTSIDE_CONDENSATION
-            FogType.DSM_CAMERA_FOG -> StatusCanvasView.VisualState.DSM_CAMERA_FOG
-        }
-        statusCanvas.setState(visualState, applying = false)
-
-        when (fogType) {
-            FogType.INSIDE_FOG -> {
-                updateNotificationAndButton(
-                    dotHex = "#2563EB",
-                    title = "알림 · 앞유리 안쪽에 습기가 찼어요",
-                    subtitle = "전면 제습(FRONT)과 외기 유입으로 빠르게 제거합니다",
-                    buttonText = "적용",
-                    buttonHex = "#2563EB"
-                )
-            }
-            FogType.OUTSIDE_CONDENSATION -> {
-                updateNotificationAndButton(
-                    dotHex = "#D97706",
-                    title = "알림 · 앞유리 바깥쪽에 물기가 맺혔어요",
-                    subtitle = "유리 찬 바람을 차단하고 와이퍼를 1회 작동합니다",
-                    buttonText = "적용",
-                    buttonHex = "#D97706"
-                )
-            }
-            FogType.DSM_CAMERA_FOG -> {
-                updateNotificationAndButton(
-                    dotHex = "#059669",
-                    title = "알림 · 카메라 미러 렌즈에 김이 서렸어요",
-                    subtitle = "양쪽 미러 하단 렌즈 열선을 즉시 가동합니다",
-                    buttonText = "적용",
-                    buttonHex = "#059669"
-                )
-            }
+        if (zones.isEmpty()) {
+            updateNotificationAndButton(
+                dotHex = "#10B981",
+                title = "알림 · 앞유리 · 카메라 미러 · 뒷유리 시야가 모두 깨끗합니다",
+                subtitle = "차량 그림을 터치해 구역별 상태를 점검할 수 있습니다",
+                buttonText = "전체 점검",
+                buttonHex = "#2563EB"
+            )
+        } else {
+            updateNotificationAndButton(
+                dotHex = "#2563EB",
+                title = "알림 · ${zones.joinToString(" · ")}에 김서림·물기가 감지되었어요",
+                subtitle = "${actions.joinToString(" + ")}을 동시에 자동 작동합니다",
+                buttonText = "적용",
+                buttonHex = "#2563EB"
+            )
         }
     }
 
     private fun onApplyClicked() {
+        val anyActive = statusCanvas.frontInsideFog ||
+            statusCanvas.frontOutsideWater ||
+            statusCanvas.dsmMirrorFog ||
+            statusCanvas.rearGlassFog
+
+        if (!anyActive) {
+            statusCanvas.resetAllZonesActive()
+            refreshNotificationFromCanvas()
+            return
+        }
+
         if (!isApplied) {
             isApplied = true
-            val resolution = controller.resolveFogging(selectedFogType, defaultSnapshot)
-
-            val visualState = when (selectedFogType) {
-                FogType.INSIDE_FOG -> StatusCanvasView.VisualState.INSIDE_FOG
-                FogType.OUTSIDE_CONDENSATION -> StatusCanvasView.VisualState.OUTSIDE_CONDENSATION
-                FogType.DSM_CAMERA_FOG -> StatusCanvasView.VisualState.DSM_CAMERA_FOG
-            }
-            statusCanvas.setState(visualState, applying = true)
-
+            val summary = controller.applyAllAroundCare(
+                frontInside = statusCanvas.frontInsideFog,
+                frontOutside = statusCanvas.frontOutsideWater,
+                dsmMirror = statusCanvas.dsmMirrorFog,
+                rearGlass = statusCanvas.rearGlassFog
+            )
+            statusCanvas.setApplying(true)
             updateNotificationAndButton(
                 dotHex = "#10B981",
-                title = "적용 완료 · ${resolution.toastHeadline}",
-                subtitle = "시야가 깨끗해지면 원래 공조 상태로 자동 복귀합니다",
-                buttonText = "해제",
-                buttonHex = "#334155"
+                title = "적용 완료 · $summary",
+                subtitle = "시야가 확보되면 기존 오토(AUTO) 공조 상태로 자동 복귀합니다",
+                buttonText = "완료",
+                buttonHex = "#059669"
             )
         } else {
             isApplied = false
             controller.restoreComfortMode()
-            statusCanvas.setState(StatusCanvasView.VisualState.CLEAR, applying = false)
-            updateNotificationAndButton(
-                dotHex = "#10B981",
-                title = "알림 · 모든 유리와 카메라 미러 시야가 깨끗합니다",
-                subtitle = "기존 공조 설정(AUTO)으로 복귀했습니다",
-                buttonText = "다시 점검",
-                buttonHex = "#2563EB"
-            )
+            statusCanvas.frontInsideFog = false
+            statusCanvas.frontOutsideWater = false
+            statusCanvas.dsmMirrorFog = false
+            statusCanvas.rearGlassFog = false
+            statusCanvas.setApplying(false)
+            refreshNotificationFromCanvas()
         }
     }
 
@@ -321,3 +254,4 @@ class MainActivity : Activity() {
         super.onDestroy()
     }
 }
+

@@ -42,6 +42,8 @@ class ClearViewController(
         private set
 
     private val frontWindshield = WindowArea(WindowValue.FRONT_WINDSHIELD)
+    private val rearWindshield = WindowArea(WindowValue.REAR_WINDSHIELD)
+    private val allWindshields = WindowArea(WindowValue.FRONT_WINDSHIELD, WindowValue.REAR_WINDSHIELD)
     private val frontSeats = SeatArea(SeatValue.ROW_1_LEFT, SeatValue.ROW_1_RIGHT)
     private val sideMirrors = MirrorArea(MirrorValue.DRIVER_LEFT, MirrorValue.DRIVER_RIGHT)
 
@@ -315,14 +317,62 @@ class ClearViewController(
     }
 
     /**
+     * Simultaneous all-around visibility care:
+     * Controls Front Windshield (Inside Defrost / Outside Wiper), Left/Right DSM Camera Mirrors,
+     * and Rear Windshield Defroster all in one action.
+     */
+    fun applyAllAroundCare(
+        frontInside: Boolean,
+        frontOutside: Boolean,
+        dsmMirror: Boolean,
+        rearGlass: Boolean
+    ): String {
+        if (frontInside) {
+            invokeFrontDefrost(enable = true)
+        }
+        if (frontOutside) {
+            invokeOutsideCondensationFix(targetTempC = 23.0f)
+            invokeSingleWipe()
+        }
+        if (dsmMirror) {
+            invokeSideMirrorHeat(level = 1)
+        }
+        if (rearGlass) {
+            try {
+                hvac?.setHvacDefroster(
+                    rearWindshield,
+                    true,
+                    { _, _ -> logSdk("SDK 응답: setHvacDefroster(REAR_WINDSHIELD, true)") },
+                    { }
+                )
+            } catch (_: Throwable) {
+            }
+        }
+
+        val activeNames = mutableListOf<String>()
+        if (frontInside) activeNames.add("앞유리 제습")
+        if (frontOutside) activeNames.add("앞유리 와이퍼")
+        if (dsmMirror) activeNames.add("카메라 미러 열선")
+        if (rearGlass) activeNames.add("뒷유리 열선")
+
+        val summary = if (activeNames.isEmpty()) {
+            "전체 유리 및 카메라 미러 시야 케어를 가동했습니다"
+        } else {
+            "${activeNames.joinToString(" · ")}을 동시에 켰습니다"
+        }
+        speak(summary)
+        return summary
+    }
+
+    /**
      * Restores HVAC & mirror heater to normal comfort mode once visibility is recovered.
      */
     fun restoreComfortMode(): String {
         try {
             hvac?.setHvacDefroster(
-                frontWindshield,
+                allWindshields,
                 false,
-                { _, _ -> logSdk("HVAC.setHvacDefroster(FRONT_WINDSHIELD, false) 완료") },
+                { _, _ -> logSdk("HVAC.setHvacDefroster(FRONT/REAR, false) 완료") },
                 { }
             )
             hvac?.setHvacAuto(
