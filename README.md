@@ -24,7 +24,7 @@ adb shell am start -n ai.pleos.playground.clearview/.MainActivity
 
 ```bash
 # 1. 저장소 클론 후 프로젝트 폴더 이동
-git clone <REPOSITORY_URL>
+git clone https://github.com/justinnn980/clearview-pleos.git
 cd clearview-pleos
 
 # 2. Release APK 빌드 (JDK 17 또는 21 필요)
@@ -61,9 +61,11 @@ ls -lh app/build/outputs/apk/release/app-release.apk
 
 ## 4. APK 파일 위치 또는 GitHub Release 링크
 
+- **GitHub 저장소 주소**: https://github.com/justinnn980/clearview-pleos
 - **저장소 내 APK 경로**:
-  - [`apk/ClearView_ClearView_release.apk`](./apk/ClearView_ClearView_release.apk) (영문 표준 파일명: `팀명_앱이름_release.apk`)
+  - [`apk/ClearView_ClearView_release.apk`](./apk/ClearView_ClearView_release.apk) (영문 표준 파일명: `팀명_앱이름_release.apk` — https://github.com/justinnn980/clearview-pleos/blob/main/apk/ClearView_ClearView_release.apk)
   - [`apk/ClearView_클리어뷰_release.apk`](./apk/ClearView_클리어뷰_release.apk) (국문 앱명 병기본)
+- **GitHub Release 페이지**: https://github.com/justinnn980/clearview-pleos/releases/tag/v1.0.0
 
 ---
 
